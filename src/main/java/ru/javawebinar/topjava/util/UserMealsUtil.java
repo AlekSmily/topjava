@@ -3,12 +3,11 @@ package ru.javawebinar.topjava.util;
 import ru.javawebinar.topjava.model.UserMeal;
 import ru.javawebinar.topjava.model.UserMealWithExcess;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Month;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class UserMealsUtil {
     public static void main(String[] args) {
@@ -29,20 +28,14 @@ public class UserMealsUtil {
     }
 
     public static List<UserMealWithExcess> filteredByCycles(List<UserMeal> meals, LocalTime startTime, LocalTime endTime, int caloriesPerDay) {
+        Map<LocalDate, Integer> caloriesByDate = new HashMap<>();
         List<UserMealWithExcess> userMealWithExcessList = new ArrayList<>();
-        boolean isExcess = false;
-        int sumCalories = 0;
         for (UserMeal meal : meals) {
-            if (meal.getDateTime().toLocalTime().compareTo(startTime) >= 0 && meal.getDateTime().toLocalTime().compareTo(endTime) < 0) {
-                sumCalories += meal.getCalories();
-            }
-        }
-        if (sumCalories > caloriesPerDay) {
-            isExcess = true;
+            caloriesByDate.merge(meal.getDateTime().toLocalDate(), meal.getCalories(), Integer::sum);
         }
         for (UserMeal userMeal : meals) {
-            if (userMeal.getDateTime().toLocalTime().compareTo(startTime) >= 0 && userMeal.getDateTime().toLocalTime().compareTo(endTime) < 0) {
-                userMealWithExcessList.add(new UserMealWithExcess(userMeal.getDateTime(), userMeal.getDescription(), userMeal.getCalories(), isExcess));
+            if (TimeUtil.isBetweenHalfOpen(userMeal.getDateTime().toLocalTime(), startTime, endTime)) {
+                userMealWithExcessList.add(new UserMealWithExcess(userMeal.getDateTime(), userMeal.getDescription(), userMeal.getCalories(), caloriesByDate.getOrDefault(userMeal.getDateTime().toLocalDate(), 0) > caloriesPerDay));
             }
         }
         return userMealWithExcessList;
